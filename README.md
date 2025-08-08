@@ -1,100 +1,129 @@
-# MCP Server Starter Template
+# Rails Guides MCP Server
 
-A comprehensive starter template for building **Model Context Protocol (MCP) servers**, specifically designed for UI libraries and component registries. This template provides a robust foundation for creating MCP servers that can fetch, categorize, and provide component information to AI assistants like Claude.
-
-## 🌎 Real world example?
-
-Check out the [stackzero-labs/mcp](https://github.com/stackzero-labs/mcp) which uses this template to expose its UI components and blocks to AI models. You can also checkout the UI referenced project [stackzero/ui](https://github.com/stackzero-labs/ui)
+A **Model Context Protocol (MCP) server** that provides access to Ruby on Rails documentation and guides. This server allows AI assistants like Claude to access, search, and reference Rails Guides content programmatically, making it easier to get Rails development help and documentation.
 
 ## 🚀 Features
 
-- **Ready-to-use MCP server** with TypeScript support
-- **Component registry integration** for UI libraries
-- **Categorized component organization** with flexible category system
-- **Zod schema validation** for type safety
+- **Complete Rails Guides access** - All official Rails documentation categories
+- **Version support** - Support for multiple Rails versions (8.0, 7.1, 4.2, etc.)
+- **Categorized organization** - Guides organized by topic (Models, Views, Controllers, etc.)
+- **Dynamic version switching** - Environment variable support for different Rails versions
+- **TypeScript implementation** with Zod schema validation
 - **Development tools** including hot reload and inspector
-- **Example implementation** using a real project URL for demonstration
-- **Extensible architecture** for custom component types and categories
+- **Ready for Claude integration** with simple setup commands
 
 ## 📋 Prerequisites
 
 - Node.js 18 or higher
-- pnpm (recommended) or npm
-- Basic understanding of TypeScript and MCP
+- npm, yarn, or pnpm
+- Claude desktop app (for integration)
 
 ## 🤝 Intended Use Cases
 
-This template is specifically designed for libraries following the `registry` format (like `shadcn/ui`), making it ideal for:
+This MCP server is perfect for:
 
-- UI component libraries
-- Design systems
-- Component registries that need to be accessible via AI assistants
-- Tools, utilities, and frameworks that require a structured way to expose UI components to AI models
+- **Rails developers** seeking quick access to official documentation
+- **AI-assisted Rails development** with Claude or other MCP-compatible tools
+- **Learning Rails** with contextual documentation access
+- **Code review and debugging** with instant access to Rails conventions
+- **Teams** wanting consistent Rails documentation access across projects
 
-> Read more about components registries like shadcn/ui here [Component Registries](https://ui.shadcn.com/docs/registry).
+## 🚀 Quick Start with Claude
 
-With some customizations however, it can be adapted for other types of MCP servers as well.
-
-## 🛠️ Installation
-
-1. Clone or download this template:
+### Option 1: Add to Claude Project (Recommended)
 
 ```bash
-git clone https://github.com/mnove/mcp-starter.git
-cd mcp-starter
+# Navigate to your Rails project directory
+cd your-rails-project
+
+# Add the Rails Guides MCP server to your project
+claude mcp add rails-guides npx rails-mcp-server
+
+# For specific Rails version
+claude mcp add rails-guides npx rails-mcp-server -e RAILS_VERSION=7.1
+```
+
+### Option 2: Add Globally
+
+```bash
+# Add globally for all Claude sessions
+claude mcp add rails-guides npx rails-mcp-server --scope user
+
+# With specific Rails version
+claude mcp add rails-guides npx rails-mcp-server --scope user -e RAILS_VERSION=7.1
+```
+
+### Option 3: Add Locally
+
+```bash
+# Add for local Claude sessions only
+claude mcp add rails-guides npx rails-mcp-server --scope local
+```
+
+## 🔧 Rails Version Support
+
+The server defaults to **Rails 8.0** documentation but supports multiple versions:
+
+### Supported Versions
+
+- **Rails 8.0** (default) - `https://guides.rubyonrails.org`
+- **Rails 7.1** - `https://guides.rubyonrails.org/v7.1`
+- **Rails 4.2** - `https://guides.rubyonrails.org/v4.2`
+- **Other versions** - Follow the pattern `v{major}.{minor}`
+
+### Setting Rails Version
+
+Use the `RAILS_VERSION` environment variable:
+
+```bash
+# Default (Rails 8.0)
+claude mcp add rails-guides npx rails-mcp-server
+
+# Rails 7.1
+claude mcp add rails-guides npx rails-mcp-server -e RAILS_VERSION=7.1
+
+# Rails 4.2
+claude mcp add rails-guides npx rails-mcp-server -e RAILS_VERSION=4.2
+
+# Rails 6.0
+claude mcp add rails-guides npx rails-mcp-server -e RAILS_VERSION=6.0
+```
+
+### Alternative Environment Variable
+
+You can also use `RAILS_GUIDES_VERSION`:
+
+```bash
+claude mcp add rails-guides npx rails-mcp-server -e RAILS_GUIDES_VERSION=7.1
+```
+
+## 🛠️ Manual Installation (Development)
+
+If you want to modify or contribute to this server:
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/your-username/rails-mcp-server.git
+cd rails-mcp-server
 ```
 
 2. Install dependencies:
 
 ```bash
-pnpm install
+npm install
 ```
 
 3. Build the project:
 
 ```bash
-pnpm run build
+npm run build
 ```
 
-## ⚙️ Configuration
+4. Test locally:
 
-### 1. Update Project Configuration
-
-Edit `src/lib/config.ts` to point to your own component registry:
-
-```typescript
-export const mcpConfig = {
-  projectName: "your-project-name",
-  // Replace with your actual project URL
-  baseUrl: "https://your-ui-library.com",
-  registryUrl: "https://your-ui-library.com/r",
-  registryFileUrl: "https://your-ui-library.com/registry.json",
-};
-```
-
-**Note**: This template currently uses `https://ui.stackzero.co` as a demonstration URL. You **must** replace this with your actual project URL for production use.
-
-### 2. Define Component Categories
-
-Customize `src/lib/categories.ts` to match your component structure:
-
-```typescript
-export const componentCategories = {
-  Buttons: ["button-primary", "button-secondary", "button-ghost"],
-  Forms: ["input-text", "input-email", "textarea"],
-  // Add your categories here
-};
-```
-
-### 3. Update Server Metadata
-
-Modify `src/server.ts` to customize your server information:
-
-```typescript
-const server = new McpServer({
-  name: "your-mcp-server-name",
-  version: "1.0.0",
-});
+```bash
+node dist/server.js
 ```
 
 ## 🏃‍♂️ Development
@@ -102,58 +131,68 @@ const server = new McpServer({
 ### Start Development Server
 
 ```bash
-pnpm run dev
+npm run dev
 ```
 
 ### Build for Production
 
 ```bash
-pnpm run build
+npm run build
 ```
 
 ### Inspect MCP Server
 
 ```bash
-pnpm run inspect
+npm run inspect
 ```
 
 This opens the MCP Inspector to test your server tools interactively.
-Make sure you auth token is present in the inspector url, otherwise the connection will fail. 
 
 ## 📚 Available Tools
 
-The MCP server provides the following tools:
+The Rails Guides MCP server provides the following tools:
 
-### `getUIComponents`
+### Core Tools
 
-Returns a comprehensive list of all UI components from your registry.
+- **`getRailsGuides`** - Returns a comprehensive list of all Rails Guides with categories and metadata
+- **`getGuideRegistry`** - Complete registry with all guides, categories, and version info  
+- **`getGuideContent`** - Fetches the full HTML content of a specific Rails Guide
 
 ### Category-specific Tools
 
-Dynamic tools are created for each category defined in `componentCategories`:
+Dynamic tools are created for each Rails Guide category:
 
-- `getButtons` - Get all button components
-- `getForms` - Get all form components
-- etc.
+- **`getStartHereGuides`** - Getting Started, Installation guides
+- **`getModelsGuides`** - Active Record, Migrations, Validations, Associations, etc.
+- **`getViewsGuides`** - Action View, Layouts, Helpers, Form Helpers
+- **`getControllersGuides`** - Action Controller, Routing, Advanced Topics
+- **`getOtherComponentsGuides`** - Active Support, Action Mailer, Active Job, etc.
+- **`getDiggingDeeperGuides`** - I18n, Testing, Debugging, Configuration, etc.
+- **`getGoingToProductionGuides`** - Caching, Security, Performance
+- **`getAdvancedActiveRecordGuides`** - PostgreSQL, Multiple DBs, Encryption
+- **`getExtendingRailsGuides`** - Plugins, Rack, Generators, Engines
+- **`getContributingGuides`** - Contributing, API docs, Development setup
 
-Each category tool provides:
+### Example Usage
 
-- Component implementation details
-- Usage examples
-- Installation instructions
-- Related components
+Once added to Claude, you can ask questions like:
+
+- "Show me the Rails guides for Models"
+- "Get the Getting Started guide content"
+- "What Rails guides are available for testing?"
+- "Fetch the Active Record associations guide"
 
 ## 🏗️ Project Structure
 
 ```
-mcp-starter/
+rails-mcp-server/
 ├── src/
-│   ├── server.ts              # Main MCP server implementation
+│   ├── server.ts              # Main Rails Guides MCP server
 │   ├── lib/
-│   │   ├── config.ts          # Configuration settings
-│   │   └── categories.ts      # Component categories
+│   │   ├── config.ts          # Configuration with version support
+│   │   └── categories.ts      # Rails Guides categories
 │   └── utils/
-│       ├── api.ts             # API fetching utilities
+│       ├── api.ts             # Rails Guides fetching utilities
 │       ├── formatters.ts      # Data formatting helpers
 │       ├── schemas.ts         # Zod validation schemas
 │       └── index.ts           # Utility exports
@@ -164,139 +203,114 @@ mcp-starter/
 
 ## 🔧 Customization
 
-### Adding New Component Types
+### Adding New Rails Guide Categories
 
-1. **Update schemas** in `src/utils/schemas.ts`:
-
-```typescript
-export const CustomComponentSchema = z.object({
-  name: z.string(),
-  category: z.string(),
-  // Add your fields
-});
-```
-
-2. **Add API functions** in `src/utils/api.ts`:
+To add new guide categories, update `src/lib/categories.ts`:
 
 ```typescript
-export async function fetchCustomComponents() {
-  // Your implementation
-}
-```
-
-3. **Register new tools** in `src/server.ts`:
-
-```typescript
-server.tool("getCustomComponents" /*...*/);
-```
-
-### Extending Categories
-
-Simply add new categories to `src/lib/categories.ts`:
-
-```typescript
-export const componentCategories = {
+export const guideCategories = {
   // Existing categories...
-  Navigation: ["navbar", "sidebar", "breadcrumbs"],
-  DataDisplay: ["table", "card", "badge"],
+  "Custom Category": [
+    "custom_guide_1",
+    "custom_guide_2", 
+  ],
 };
 ```
 
-The server will automatically create tools for new categories.
+The server will automatically create category-specific tools.
 
-### Why categories?
+### Supporting Different Rails Versions
 
-Categories help organize components logically, making it easier for AI assistants to find and suggest relevant components based.
-Also, some models and IDE have a limit on the number of tools they can handle, so categorizing helps to keep the number of tools manageable.
+The server automatically handles different Rails versions through URL patterns:
 
-You can customize your categories however you want, depending on your cases. If you do not have many tools, then you could also consider not using categories at all.
+- **Rails 8.0+**: `https://guides.rubyonrails.org/{guide}.html`
+- **Older versions**: `https://guides.rubyonrails.org/v{version}/{guide}.html`
 
-## 📖 Registry Format
+### Customizing Guide Processing
 
-Your component registry should follow this structure:
+Modify `src/utils/api.ts` to customize how guides are processed:
 
-### Registry File (`registry.json`)
-
-```json
-{
-  "registry": [
-    {
-      "name": "button-primary",
-      "type": "registry:component",
-      "description": "Primary button component"
-    }
-  ]
-}
-```
-
-### Component Details (`/r/{component-name}.json`)
-
-```json
-{
-  "name": "button-primary",
-  "type": "registry:component",
-  "files": [
-    {
-      "content": "// Component implementation"
-    }
-  ]
+```typescript
+export async function fetchGuideDetails(guideName: string) {
+  // Add custom processing logic
+  // Parse HTML sections, extract code examples, etc.
 }
 ```
 
 ## 🚀 Deployment
 
-### As a Local MCP Server
+### Publishing as NPM Package
 
-1. Build the project:
+To make this server available via `npx`, publish it to npm:
 
-```bash
-pnpm run build
-```
-
-2. Configure in your MCP client (e.g., Claude Desktop):
+1. Update `package.json` with your details:
 
 ```json
 {
-  "mcpServers": {
-    "your-mcp-server": {
-      "command": "node",
-      "args": ["/path/to/mcp-starter/dist/server.js"]
-    }
+  "name": "rails-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Rails Guides documentation",
+  "bin": {
+    "rails-mcp-server": "./dist/server.js"
   }
 }
 ```
 
-### As an NPM Package
-
-You can also publish this template as an NPM package for easy installation in other projects.
-
-1. Update `package.json` with your details
 2. Build and publish:
 
 ```bash
-pnpm run build
+npm run build
 npm publish
+```
+
+3. Then users can add it with:
+
+```bash
+claude mcp add rails-guides npx rails-mcp-server
+```
+
+### Manual Installation
+
+For development or custom deployments:
+
+```bash
+# Clone and build
+git clone https://github.com/your-username/rails-mcp-server.git
+cd rails-mcp-server
+npm install && npm run build
+
+# Add to Claude with local path
+claude mcp add rails-guides node /path/to/rails-mcp-server/dist/server.js
 ```
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to this project.
+Contributions are welcome! Here's how you can help:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes** and add tests if applicable
+4. **Commit your changes**: `git commit -m 'feat: add amazing feature'`
+5. **Push to the branch**: `git push origin feature/amazing-feature`
+6. **Open a Pull Request**
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🤝 Contact
-
-Marcello - [@mnove](https://github.com/mnove)
-
 ## 🙏 Acknowledgments
 
 - Built with [Model Context Protocol SDK](https://github.com/modelcontextprotocol/sdk)
-- Originally inspired by magic-ui MCP server
-- Inspired by the need for better AI-component integration
-- Thanks to the MCP community for their contributions
+- Rails Guides content from [Ruby on Rails](https://rubyonrails.org/)
+- Inspired by the need for better AI-assisted Rails development
+- Thanks to the MCP and Rails communities
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/your-username/rails-mcp-server/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/rails-mcp-server/discussions)
+- **Rails Guides**: [Official Rails Guides](https://guides.rubyonrails.org/)
 
 ---
 
-**⚠️ Important**: Remember to replace `https://ui.stackzero.co` with your actual project URL before using this template in production!
+**✨ Happy Rails development with AI assistance!**

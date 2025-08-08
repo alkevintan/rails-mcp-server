@@ -1,108 +1,116 @@
 import { mcpConfig } from "../lib/config.js";
+import { guideCategories } from "../lib/categories.js";
 import {
-  ComponentDetailSchema,
-  ComponentSchema,
-  ExampleComponentSchema,
-  ExampleDetailSchema,
+  GuideSchema,
+  GuideDetailSchema,
+  GuideRegistrySchema,
 } from "./schemas.js";
 
 /**
- *  Fetches all UI components from the registry.
- *  @returns An array of components with their details.
+ * Fetches all Rails Guides by scraping the main guides page
+ * @returns An array of guides with their basic details
  */
-export async function fetchUIComponents() {
+export async function fetchRailsGuides() {
   try {
-    const response = await fetch(mcpConfig.registryFileUrl);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch registry.json: ${response.statusText} - Status: ${response.status}`
-      );
+    // Create guides list from our predefined categories
+    const guides = [];
+    
+    for (const [category, guideNames] of Object.entries(guideCategories)) {
+      for (const guideName of guideNames) {
+        // Convert guide name to URL format (e.g., "getting_started" -> "getting_started.html")
+        const url = `${mcpConfig.baseUrl}/${guideName}.html`;
+        
+        // Convert guide name to title format
+        const title = guideName
+          .split('_')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        
+        guides.push(GuideSchema.parse({
+          name: guideName,
+          title: title,
+          url: url,
+          category: category,
+          description: `${title} - Rails ${mcpConfig.railsVersion} Guide`,
+        }));
+      }
     }
-    const data = await response.json();
-
-    return data.registry
-      .filter((item: any) => item.type === "registry:component")
-      .map((item: any) => {
-        try {
-          return ComponentSchema.parse({
-            name: item.name,
-            type: item.type,
-            description: item.description,
-          });
-        } catch (parseError) {
-          return null;
-        }
-      });
+    
+    return guides;
   } catch (error) {
+    console.error("Error fetching Rails guides:", error);
     return [];
   }
 }
 
 /**
- * Fetches details for a specific component from the registry.
- * @param componentName The name of the component.
- * @returns The details of the component.
+ * Fetches detailed content for a specific Rails Guide by scraping its HTML page
+ * @param guideName The name of the guide (e.g., "getting_started")
+ * @returns The detailed guide content
  */
-export async function fetchComponentDetails(componentName: string) {
+export async function fetchGuideDetails(guideName: string) {
   try {
-    const response = await fetch(
-      `${mcpConfig.registryUrl}/${componentName}.json`
-    );
+    const url = `${mcpConfig.baseUrl}/${guideName}.html`;
+    const response = await fetch(url);
+    
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch component ${componentName}: ${response.statusText}`
+        `Failed to fetch guide ${guideName}: ${response.statusText}`
       );
     }
-    const data = await response.json();
-    return ComponentDetailSchema.parse(data);
+    
+    const htmlContent = await response.text();
+    
+    // Find the category for this guide
+    let category = "Unknown";
+    for (const [cat, guides] of Object.entries(guideCategories)) {
+      if (guides.includes(guideName)) {
+        category = cat;
+        break;
+      }
+    }
+    
+    // Convert guide name to title
+    const title = guideName
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    return GuideDetailSchema.parse({
+      name: guideName,
+      title: title,
+      url: url,
+      category: category,
+      description: `${title} - Rails ${mcpConfig.railsVersion} Guide`,
+      content: htmlContent,
+      // TODO: Parse sections and table of contents from HTML if needed
+    });
   } catch (error) {
-    console.error(`Error fetching component ${componentName}:`, error);
+    console.error(`Error fetching guide details for ${guideName}:`, error);
     throw error;
   }
 }
 
 /**
- * Fetches example components from the registry.
- * @returns An array of example components.
+ * Fetches the complete Rails Guides registry
+ * @returns Complete registry with all guides and categories
  */
-export async function fetchExampleComponents() {
+export async function fetchGuideRegistry() {
   try {
-    const response = await fetch(mcpConfig.registryFileUrl);
-    const data = await response.json();
-
-    return data.registry
-      .filter((item: any) => item.type === "registry:example")
-      .map((item: any) => {
-        return ExampleComponentSchema.parse({
-          name: item.name,
-          type: item.type,
-          description: item.description,
-          registryDependencies: item.registryDependencies,
-        });
-      });
+    const guides = await fetchRailsGuides();
+    
+    return GuideRegistrySchema.parse({
+      guides: guides,
+      categories: guideCategories,
+      version: mcpConfig.railsVersion,
+      lastUpdated: new Date().toISOString(),
+    });
   } catch (error) {
-    console.error("Error fetching example components:", error);
-    return [];
-  }
-}
-
-/**
- * Fetches details for a specific example component.
- * @param exampleName The name of the example component.
- * @returns The details of the example component.
- */
-export async function fetchExampleDetails(exampleName: string) {
-  try {
-    const response = await fetch(`${mcpConfig.registryUrl}/${exampleName}`);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch example details for ${exampleName}: ${response.statusText}`
-      );
-    }
-    const data = await response.json();
-    return ExampleDetailSchema.parse(data);
-  } catch (error) {
-    console.error(`Error fetching example details for ${exampleName}:`, error);
+    console.error("Error fetching guide registry:", error);
     throw error;
   }
 }
+
+// Legacy function aliases for backward compatibility
+export const fetchUIComponents = fetchRailsGuides;
+export const fetchComponentDetails = fetchGuideDetails;

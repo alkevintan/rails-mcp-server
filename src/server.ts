@@ -3,35 +3,33 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
-  IndividualComponentSchema,
-  fetchComponentDetails,
-  fetchExampleComponents,
-  fetchExampleDetails,
-  fetchUIComponents,
+  fetchRailsGuides,
+  fetchGuideDetails,
+  fetchGuideRegistry,
 } from "./utils/index.js";
-import { formatComponentName } from "./utils/formatters.js";
-import { componentCategories } from "./lib/categories.js";
+import { guideCategories } from "./lib/categories.js";
+import { mcpConfig } from "./lib/config.js";
 
-// Initialize the MCP Server
+// Initialize the Rails Guides MCP Server
 const server = new McpServer({
-  name: "your-mcp-server",
-  version: "0.0.1",
+  name: "rails-guides-mcp-server",
+  version: "1.0.0",
 });
 
-// Register the main tool for getting all components
+// Register the main tool for getting all Rails Guides
 server.tool(
-  "getUIComponents",
-  "Provides a comprehensive list of all ui components.",
+  "getRailsGuides",
+  `Provides a comprehensive list of all Rails ${mcpConfig.railsVersion} Guides with their categories and basic information.`,
   {},
   async () => {
     try {
-      const uiComponents = await fetchUIComponents();
+      const railsGuides = await fetchRailsGuides();
 
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(uiComponents, null, 2),
+            text: JSON.stringify(railsGuides, null, 2),
           },
         ],
       };
@@ -40,7 +38,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: "Failed to fetch components",
+            text: "Failed to fetch Rails Guides",
           },
         ],
         isError: true,
@@ -49,178 +47,137 @@ server.tool(
   }
 );
 
-function createComponentExampleRegistry(
-  exampleComponentList: Array<{
-    name: string;
-    registryDependencies?: string[];
-  }>
-): Map<string, string[]> {
-  const componentRegistry = new Map<string, string[]>();
-
-  for (const exampleItem of exampleComponentList) {
-    if (
-      exampleItem.registryDependencies &&
-      Array.isArray(exampleItem.registryDependencies)
-    ) {
-      for (const dependencyUrl of exampleItem.registryDependencies) {
-        if (
-          typeof dependencyUrl === "string" &&
-          dependencyUrl.includes("your-project-url.com")
-        ) {
-          const nameExtraction = dependencyUrl.match(/\/r\/([^\/]+)$/);
-          if (nameExtraction && nameExtraction[1]) {
-            const extractedComponentName = nameExtraction[1];
-            if (!componentRegistry.has(extractedComponentName)) {
-              componentRegistry.set(extractedComponentName, []);
-            }
-            if (
-              !componentRegistry
-                .get(extractedComponentName)
-                ?.includes(exampleItem.name)
-            ) {
-              componentRegistry
-                .get(extractedComponentName)
-                ?.push(exampleItem.name);
-            }
-          }
-        }
-      }
-    }
-  }
-  return componentRegistry;
-}
-
-async function fetchComponentsByCategory(
-  categoryComponents: string[],
-  allComponents: any[],
-  exampleNamesByComponent: Map<string, string[]>
-) {
-  const componentResults = [];
-
-  for (const componentName of categoryComponents) {
-    const component = allComponents.find((c) => c.name === componentName);
-    if (!component) continue;
-
+// Register tool for getting complete guide registry
+server.tool(
+  "getGuideRegistry",
+  `Provides the complete Rails ${mcpConfig.railsVersion} Guides registry with categories and metadata.`,
+  {},
+  async () => {
     try {
-      const componentDetails = await fetchComponentDetails(componentName);
-      const componentContent = componentDetails.files[0]?.content;
+      const registry = await fetchGuideRegistry();
 
-      const relevantExampleNames =
-        exampleNamesByComponent.get(componentName) || [];
-
-      // Generate installation instructions
-      const installInstructions = `You can install the component using  \
-      shadcn/ui CLI. For example, with npx: npx shadcn@latest add \
-      "https://your-project-url.com/r/${componentName}.json" (Rules: make sure the URL is wrapped in \
-      double quotes. Once installed, you can import the component like this: import { ${formatComponentName(
-        component.name
-      )} } from \
-      "@/components/ui/${componentName}";`;
-
-      const disclaimerText = `The code below is for context only. It helps you understand
-      the component's props, types, and behavior. After installing, the component
-      will be available for import via: import { ${formatComponentName(
-        component.name
-      )} } \
-      from "@/components/ui/${componentName}";`;
-
-      const exampleDetailsList = await Promise.all(
-        relevantExampleNames.map((name) => fetchExampleDetails(name))
-      );
-
-      const formattedExamples = exampleDetailsList
-        .filter((details) => details !== null)
-        .map((details) => ({
-          name: details.name,
-          type: details.type,
-          description: details.description,
-          content: details.files[0]?.content,
-        }));
-
-      const validatedComponent = IndividualComponentSchema.parse({
-        name: component.name,
-        type: component.type,
-        description: component.description,
-        install: installInstructions,
-        content: componentContent && disclaimerText + componentContent,
-        examples: formattedExamples,
-      });
-
-      componentResults.push(validatedComponent);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(registry, null, 2),
+          },
+        ],
+      };
     } catch (error) {
-      console.error(`Error processing component ${componentName}:`, error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Failed to fetch Rails Guides registry",
+          },
+        ],
+        isError: true,
+      };
     }
   }
+);
 
-  return componentResults;
-}
+// Register tool for getting a specific guide's content
+server.tool(
+  "getGuideContent",
+  `Fetches the complete content of a specific Rails ${mcpConfig.railsVersion} Guide.`,
+  {
+    guideName: {
+      type: "string",
+      description: "The name of the guide (e.g., 'getting_started', 'active_record_basics')",
+    },
+  },
+  async (args) => {
+    try {
+      const guideDetails = await fetchGuideDetails(args.guideName as string);
 
-// Registers tools for each component category
-async function registerComponentsCategoryTools() {
-  const [components, allExampleComponents] = await Promise.all([
-    fetchUIComponents(),
-    fetchExampleComponents(),
-  ]);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(guideDetails, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Failed to fetch guide content for: ${args.guideName}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+);
 
-  const exampleNamesByComponent =
-    createComponentExampleRegistry(allExampleComponents);
+// Registers tools for each Rails Guide category
+async function registerGuideCategoryTools() {
+  try {
+    const allGuides = await fetchRailsGuides();
 
-  for (const [category, categoryComponents] of Object.entries(
-    componentCategories
-  )) {
-    const componentNamesString = categoryComponents.join(", ");
+    for (const [category, guideNames] of Object.entries(guideCategories)) {
+      // Create category-specific tool name (replace spaces and special chars)
+      const toolName = `get${category.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '')}Guides`;
+      const guideNamesString = guideNames.join(", ");
 
-    server.tool(
-      `get${category}`,
-      `Provides implementation details for ${componentNamesString} components.`,
-      {},
-      async () => {
-        try {
-          const categoryResults = await fetchComponentsByCategory(
-            categoryComponents,
-            components,
-            exampleNamesByComponent
-          );
+      server.tool(
+        toolName,
+        `Provides Rails ${mcpConfig.railsVersion} Guides for the ${category} category: ${guideNamesString}`,
+        {},
+        async () => {
+          try {
+            // Filter guides for this category
+            const categoryGuides = allGuides.filter(guide => guide.category === category);
 
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(categoryResults, null, 2),
-              },
-            ],
-          };
-        } catch (error) {
-          let errorMessage = `Error processing ${category} components`;
-          if (error instanceof Error) {
-            errorMessage += `: ${error.message}`;
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(categoryGuides, null, 2),
+                },
+              ],
+            };
+          } catch (error) {
+            let errorMessage = `Error fetching ${category} guides`;
+            if (error instanceof Error) {
+              errorMessage += `: ${error.message}`;
+            }
+            return {
+              content: [{ type: "text", text: errorMessage }],
+              isError: true,
+            };
           }
-          return {
-            content: [{ type: "text", text: errorMessage }],
-            isError: true,
-          };
         }
-      }
-    );
+      );
+    }
+  } catch (error) {
+    console.error("Error registering guide category tools:", error);
   }
 }
 
-// Start the MCP server
+// Start the Rails Guides MCP server
 async function startServer() {
   try {
-    // Initialize category tools first
-    await registerComponentsCategoryTools();
+    // Initialize Rails Guide category tools first
+    await registerGuideCategoryTools();
+    console.log(`✅ Rails ${mcpConfig.railsVersion} Guides category tools registered`);
+    
     // Connect to stdio transport
     const transport = new StdioServerTransport();
     await server.connect(transport);
+    console.log(`✅ Rails ${mcpConfig.railsVersion} Guides MCP server started successfully`);
   } catch (error) {
-    console.error("❌ Error starting MCP server:", error);
+    console.error("❌ Error starting Rails Guides MCP server:", error);
 
     // Try to start server anyway with basic functionality
     try {
       const transport = new StdioServerTransport();
       await server.connect(transport);
-      console.error("⚠️ MCP server started with limited functionality");
+      console.error("⚠️ Rails Guides MCP server started with limited functionality");
     } catch (connectionError) {
       console.error("❌ Failed to connect to transport:", connectionError);
       process.exit(1);

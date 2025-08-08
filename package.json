@@ -1,8 +1,12 @@
 {
-  "name": "mcp-starter",
-  "version": "0.1.0",
-  "author": "mnove",
+  "name": "rails-mcp-server",
+  "version": "1.0.0",
+  "author": "alkevintan",
   "keywords": [
+    "rails",
+    "ruby-on-rails",
+    "documentation",
+    "guides",
     "mcp",
     "model-context-protocol",
     "ai",
@@ -10,13 +14,13 @@
     "server"
   ],
   "license": "MIT",
-  "description": "MCP (Model Context Protocol) server starter template ",
+  "description": "MCP server for accessing Ruby on Rails documentation and guides",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mnove/mcp-server-starter.git"
+    "url": "git+https://github.com/alkevintan/rails-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/mnove/mcp-server-starter/issues"
+    "url": "https://github.com/alkevintan/rails-mcp-server/issues"
   },
   "scripts": {
     "build": "tsup src/server.ts --format esm,cjs --dts --out-dir dist",
@@ -32,7 +36,7 @@
   "module": "./dist/server.js",
   "types": "./dist/server.d.ts",
   "bin": {
-    "mcp": "./dist/server.js"
+    "rails-mcp-server": "./dist/server.js"
   },
   "files": [
     "dist"
